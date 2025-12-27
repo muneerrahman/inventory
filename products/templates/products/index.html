@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Product Inventory</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #333;
+        }
+        input {
+            padding: 5px;
+            margin-right: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            margin-left: 3px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button#add-update-btn { background-color: #2196F3; color: white; }
+        button.edit { background-color: #4CAF50; color: white; }
+        button.delete { background-color: #f44336; color: white; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        #message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        #message.success { background-color: #d4edda; color: #155724; }
+        #message.error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Product Inventory</h1>
+
+    <!-- Form for Add / Update -->
+    <div>
+        <input id="name" placeholder="Name">
+        <input id="price" placeholder="Price" type="number" step="0.01">
+        <input id="stock" placeholder="Stock" type="number">
+        <button id="add-update-btn" onclick="addProduct()">Add Product</button>
+    </div>
+
+    <!-- Message display -->
+    <div id="message"></div>
+
+    <!-- Product Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Price (₹)</th>
+                <th>Stock</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="product-list"></tbody>
+    </table>
+
+    <script>
+        const productList = document.getElementById("product-list");
+        const addUpdateBtn = document.getElementById("add-update-btn");
+        const messageDiv = document.getElementById("message");
+        let editId = null;
+
+        function showMessage(msg, type="success") {
+            messageDiv.textContent = msg;
+            messageDiv.className = type;
+            setTimeout(() => messageDiv.textContent = "", 3000);
+        }
+
+        async function loadProducts() {
+            productList.innerHTML = "";
+            try {
+                const res = await fetch("/api/products/");
+                const data = await res.json();
+                if (!data.length) {
+                    productList.innerHTML = "<tr><td colspan='4'>No products found</td></tr>";
+                    return;
+                }
+                data.forEach(p => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${p.name}</td>
+                        <td>${parseFloat(p.price).toFixed(2)}</td>
+                        <td>${p.stock}</td>
+                        <td>
+                            <button class="edit" onclick="editProduct(${p.id}, '${p.name}', ${p.price}, ${p.stock})">Edit</button>
+                            <button class="delete" onclick="deleteProduct(${p.id})">Delete</button>
+                        </td>
+                    `;
+                    productList.appendChild(tr);
+                });
+            } catch (err) {
+                console.error(err);
+                showMessage("Error loading products", "error");
+            }
+        }
+
+        async function addProduct() {
+            const name = document.getElementById("name").value.trim();
+            const price = document.getElementById("price").value.trim();
+            const stock = document.getElementById("stock").value.trim();
+
+            if (!name || !price || !stock) {
+                showMessage("All fields are required!", "error");
+                return;
+            }
+
+            try {
+                const res = await fetch(editId ? `/api/products/${editId}/` : "/api/products/", {
+                    method: editId ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, price: parseFloat(price), stock: parseInt(stock) })
+                });
+
+                if (res.ok) {
+                    showMessage(editId ? "Product updated!" : "Product added!");
+                    resetForm();
+                    loadProducts();
+                } else {
+                    const errData = await res.json();
+                    showMessage("Error: " + JSON.stringify(errData), "error");
+                }
+            } catch (err) {
+                console.error(err);
+                showMessage("Error saving product", "error");
+            }
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm("Delete this product?")) return;
+            try {
+                const res = await fetch(`/api/products/${id}/`, { method: "DELETE" });
+                if (res.ok) showMessage("Product deleted!");
+                loadProducts();
+            } catch (err) {
+                console.error(err);
+                showMessage("Error deleting product", "error");
+            }
+        }
+
+        function editProduct(id, name, price, stock) {
+            editId = id;
+            document.getElementById("name").value = name;
+            document.getElementById("price").value = price;
+            document.getElementById("stock").value = stock;
+            addUpdateBtn.textContent = "Update Product";
+        }
+
+        function resetForm() {
+            editId = null;
+            document.getElementById("name").value = "";
+            document.getElementById("price").value = "";
+            document.getElementById("stock").value = "";
+            addUpdateBtn.textContent = "Add Product";
+        }
+
+        // Initial load
+        loadProducts();
+    </script>
+</body>
+</html>
