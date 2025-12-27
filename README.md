@@ -4,6 +4,11 @@ A simple API built with **Django REST Framework** to manage products.
 
 ---
 
+Frontend UI to view and manage products in the browser
+  ## Accessing the UI
+- Open your browser and go to: http://127.0.0.1:8000/products/
+- You can add, edit, and delete products directly from the UI.
+
 ## Features
 - List all products
 - Add a new product
