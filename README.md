@@ -41,6 +41,16 @@ python manage.py runserver
 ```
 Server runs at: http://127.0.0.1:8000/
 
+## API Implementation
+
+The API is implemented using Function-Based Views (FBV) with Django REST Framework.
+
+- Uses `@api_view` decorator to handle HTTP methods
+- Preserves proper REST semantics and status codes
+- Validation is handled at the serializer level
+- Clean separation between API views and frontend rendering
+
+
 ## API Examples
 
 POST /api/products/
