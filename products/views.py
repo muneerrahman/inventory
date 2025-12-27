@@ -11,3 +11,7 @@ class ProductListCreateView(generics.ListCreateAPIView):
 class ProductRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+
+def product_index(request):
+    return render(request, "products/index.html")
